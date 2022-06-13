@@ -1,16 +1,12 @@
-import React, { useRef, useMemo } from 'react';
-
-import { EllipsisOutlined, PlusOutlined } from '@ant-design/icons';
+import React, { useRef, useMemo, useEffect, useState } from 'react';
 import type {
   ActionType,
   ProColumns,
   ProFormInstance,
 } from '@ant-design/pro-components';
-import { ProTable, TableDropdown } from '@ant-design/pro-components';
-import { Button, Dropdown, Menu, Space, Tag } from 'antd';
-import request from 'umi-request';
+import { ProTable } from '@ant-design/pro-components';
 import { VList } from 'virtuallist-antd';
-
+import { getUserColumns, getColumnsQuery } from './api';
 type GithubIssueItem = {
   url: string;
   id: number;
@@ -27,70 +23,7 @@ type GithubIssueItem = {
   closed_at?: string;
 };
 
-const columns: ProColumns<GithubIssueItem>[] = [
-  {
-    title: 'id',
-    dataIndex: 'id',
-    valueType: 'indexBorder',
-    width: 48,
-  },
-  {
-    title: '时间',
-    dataIndex: 'time',
-    valueType: 'date',
-  },
-  {
-    title: '标题',
-    dataIndex: 'title',
-    copyable: true,
-    ellipsis: true,
-    tip: '标题过长会自动收缩',
-    formItemProps: {
-      rules: [
-        {
-          required: true,
-          message: '此项为必填项',
-        },
-      ],
-    },
-  },
-  {
-    title: '操作',
-    valueType: 'option',
-    key: 'option',
-    render: (text, record, _, action) => [
-      <a
-        key="editable"
-        onClick={() => {
-          action?.startEditable?.(record.id);
-        }}
-      >
-        编辑
-      </a>,
-      <a href={record.url} target="_blank" rel="noopener noreferrer" key="view">
-        查看
-      </a>,
-      <TableDropdown
-        key="actionGroup"
-        onSelect={() => action?.reload()}
-        menus={[
-          { key: 'copy', name: '复制' },
-          { key: 'delete', name: '删除' },
-        ]}
-      />,
-    ],
-  },
-];
-
-const menu = (
-  <Menu>
-    <Menu.Item key="1">1st it8em</Menu.Item>
-    <Menu.Item key="2">2nd item</Menu.Item>
-    <Menu.Item key="3">3rd item</Menu.Item>
-  </Menu>
-);
-
-const dataSource = Array.from({ length: 1000 }).map((_, index) => ({
+const dataSource = Array.from({ length: 50 }).map((_, index) => ({
   id: index,
 }));
 
@@ -101,8 +34,28 @@ export default () => {
     return VList({
       height: '55vh',
       vid: 'first',
-      resetTopWhenDataChange: false, // 当数据改变时是否回滚顶部
+      //   resetTopWhenDataChange: false, // 当数据改变时是否回滚顶部
     });
+  }, []);
+  const [columns, setColumns] = useState<ProColumns<GithubIssueItem>[]>([]);
+
+  const getColumns = async () => {
+    const { elements } = await getUserColumns();
+    if (Array.isArray(elements)) {
+      setColumns(elements);
+    }
+  };
+
+  const getFilterField = async () => {
+    const { all, defaultFields } = await getColumnsQuery();
+  };
+
+  const init = () => {
+    getColumns();
+    getFilterField();
+  };
+  useEffect(() => {
+    init();
   }, []);
   return (
     <>
@@ -124,14 +77,16 @@ export default () => {
             success: true,
             total: dataSource.length,
           });
-          //   return request<{
-          //     data: GithubIssueItem[];
-          //   }>('https://proapi.azurewebsites.net/github/issues', {
-          //     params,
-          //   });
         }}
         editable={{
           type: 'multiple',
+          onValuesChange: (record, recordList) => {
+            console.log(recordList);
+          },
+          onSave: async () => {
+            return true;
+          },
+          actionRender: (row, config, dom) => [dom.save, dom.cancel], //显示保存/取消
         }}
         columnsState={{
           persistenceKey: 'pro-table-singe-demos',
@@ -169,17 +124,7 @@ export default () => {
         // }}
         pagination={false}
         dateFormatter="string"
-        headerTitle="高级表格1"
-        toolBarRender={() => [
-          <Button key="button" icon={<PlusOutlined />} type="primary">
-            新建
-          </Button>,
-          <Dropdown key="menu" overlay={menu}>
-            <Button>
-              <EllipsisOutlined />
-            </Button>
-          </Dropdown>,
-        ]}
+        headerTitle="虚拟表格"
       />
     </>
   );

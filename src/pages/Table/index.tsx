@@ -18,7 +18,7 @@ function VisualTable(props: any) {
     return VList({
       height: '55vh',
       vid: 'first',
-      resetTopWhenDataChange: false, // 当数据改变时是否回滚顶部
+      // resetTopWhenDataChange: false, // 当数据改变时是否回滚顶部
     });
   }, []);
 
