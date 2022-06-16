@@ -3,8 +3,11 @@ import type { IrsUserRequestConfig } from '@idx/toolkit/es/irs/types';
 
 const customVo = {
   modelId: 'services_portal',
-  pageName: 'membership_management_person_account_list',
-  portletName: 'portal_membership_management_person_account_list',
+  // pageName: 'membership_management_person_account_list',
+  // portletName: 'portal_membership_management_person_account_list',
+
+  pageName: 'membership_management_company_account_list',
+  portletName: 'portal_membership_management_company_account_list',
   dzgAppCode: 'gm2',
 };
 

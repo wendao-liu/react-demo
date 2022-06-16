@@ -7,21 +7,26 @@ import type {
 import { ProTable } from '@ant-design/pro-components';
 import { VList } from 'virtuallist-antd';
 import { getUserColumns, getColumnsQuery } from './api';
-type GithubIssueItem = {
-  url: string;
-  id: number;
-  number: number;
-  title: string;
-  labels: {
-    name: string;
-    color: string;
-  }[];
-  state: string;
-  comments: number;
-  created_at: string;
-  updated_at: string;
-  closed_at?: string;
-};
+import { transformField } from '../utils/fieldHelper';
+import _ from 'lodash';
+
+import {
+  TFootQuery,
+  IStatusFilter,
+  TAllConditions,
+  IValueObject,
+  TConditionSelect,
+  TForm,
+  IQueryObject,
+  IStatusSetting,
+  TUrlMap,
+  IFormValueObject,
+  TSelectMap,
+} from './interface';
+
+interface IRequireFieldMap {
+  [key: string]: string | undefined;
+}
 
 const dataSource = Array.from({ length: 50 }).map((_, index) => ({
   id: index,
@@ -30,6 +35,7 @@ const dataSource = Array.from({ length: 50 }).map((_, index) => ({
 export default () => {
   const actionRef = useRef<ActionType>();
   const formRef = useRef<ProFormInstance>();
+  const [selectMapping, setSelectMapping] = useState({});
   const vc1 = useMemo(() => {
     return VList({
       height: '55vh',
@@ -37,8 +43,7 @@ export default () => {
       //   resetTopWhenDataChange: false, // 当数据改变时是否回滚顶部
     });
   }, []);
-  const [columns, setColumns] = useState<ProColumns<GithubIssueItem>[]>([]);
-
+  const [columns, setColumns] = useState<ProColumns[]>([]);
   const getColumns = async () => {
     const { elements } = await getUserColumns();
     if (Array.isArray(elements)) {
@@ -46,8 +51,46 @@ export default () => {
     }
   };
 
+  const setSelectMappingById = (id, options) => {
+    setSelectMapping({ ...selectMapping, [id]: options });
+  };
+  console.log({ selectMapping });
+
   const getFilterField = async () => {
-    const { all, defaultFields } = await getColumnsQuery();
+    const result = await getColumnsQuery();
+    const { all, statusFilter, statusSetting } = result;
+    let defaultConditionIds = result.defaultFields;
+    let allConditions: TAllConditions = {},
+      allFields = [],
+      conditionSelectList: TConditionSelect = [],
+      statusConditionSelectList: TConditionSelect = [],
+      requireFieldsMap: IRequireFieldMap = {};
+    Array.isArray(all) &&
+      all.forEach((item) => {
+        let field = transformField(item, setSelectMappingById);
+        allFields.push(field);
+        if (field.props.filterField) {
+          return;
+        }
+        if (field.props.required) {
+          requireFieldsMap[field.id] = field.props.fieldCn;
+          if (!_.includes(defaultConditionIds, field.id)) {
+            defaultConditionIds.push(field.id);
+          }
+        }
+        allConditions[field.id] = field;
+        conditionSelectList.push({
+          code: field.id,
+          name: field.props.fieldCn!,
+        });
+        if (field.props.fieldType !== 'CascaderSelect') {
+          statusConditionSelectList.push({
+            code: field.id,
+            name: field.props.fieldCn!,
+          });
+        }
+      });
+    debugger;
   };
 
   const init = () => {
@@ -59,7 +102,7 @@ export default () => {
   }, []);
   return (
     <>
-      <ProTable<GithubIssueItem>
+      <ProTable
         columns={columns}
         actionRef={actionRef}
         cardBordered
