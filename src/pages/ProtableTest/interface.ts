@@ -76,7 +76,7 @@ export interface IFieldProps {
   selectChildKey?: string;
   cascaderList?: TCascaderList[];
   cascaderRequired?: boolean;
-  [key: string]: any;
+  [key: string]:  any;
 }
 
 export type TCascaderList = {
@@ -91,6 +91,7 @@ export interface IFieldValue {
   queryType: TFieldType;
   queryValues: string[];
 }
+
 
 export interface IQueryObject {
   queryType: TFieldType;
