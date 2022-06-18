@@ -76,7 +76,7 @@ export interface IFieldProps {
   selectChildKey?: string;
   cascaderList?: TCascaderList[];
   cascaderRequired?: boolean;
-  [key: string]: any;
+  [key: string]:  any;
 }
 
 export type TCascaderList = {
