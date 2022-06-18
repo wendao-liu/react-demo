@@ -92,6 +92,7 @@ export interface IFieldValue {
   queryValues: string[];
 }
 
+
 export interface IQueryObject {
   queryType: TFieldType;
   queryField: string;
