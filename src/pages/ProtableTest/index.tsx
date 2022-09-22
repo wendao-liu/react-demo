@@ -4,7 +4,7 @@ import type {
   ProColumns,
   ProFormInstance,
 } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
+import { EditableProTable, ProTable } from '@ant-design/pro-components';
 import { VList } from 'virtuallist-antd';
 import { getUserColumns, getColumnsQuery } from './api';
 import { transformField } from '../utils/fieldHelper';
@@ -28,8 +28,9 @@ interface IRequireFieldMap {
   [key: string]: string | undefined;
 }
 
-const dataSource = Array.from({ length: 50 }).map((_, index) => ({
+const dataSource = Array.from({ length: 10000 }).map((_, index) => ({
   id: index,
+  companyName: index,
 }));
 
 export default () => {
@@ -47,7 +48,25 @@ export default () => {
   const getColumns = async () => {
     const { elements } = await getUserColumns();
     if (Array.isArray(elements)) {
-      setColumns(elements);
+      // option
+      setColumns([
+        ...elements,
+        {
+          title: '操作',
+          valueType: 'option',
+          width: 200,
+          render: (text, record, _, action) => [
+            <a
+              key="editable"
+              onClick={() => {
+                action?.startEditable?.(record.id);
+              }}
+            >
+              编辑
+            </a>,
+          ],
+        },
+      ]);
     }
   };
 
@@ -90,7 +109,6 @@ export default () => {
           });
         }
       });
-    debugger;
   };
 
   const init = () => {
@@ -114,11 +132,15 @@ export default () => {
             filter,
             formRef: formRef?.current?.getFieldsValue(),
           });
-          return Promise.resolve({
-            data: dataSource,
-            page: 1,
-            success: true,
-            total: dataSource.length,
+          return new Promise((resolve) => {
+            setTimeout(() => {
+              resolve({
+                data: dataSource,
+                page: 1,
+                success: true,
+                total: dataSource.length,
+              });
+            }, 2000);
           });
         }}
         editable={{
@@ -129,6 +151,7 @@ export default () => {
           onSave: async () => {
             return true;
           },
+          // editableKeys: ['id'],
           actionRender: (row, config, dom) => [dom.save, dom.cancel], //显示保存/取消
         }}
         columnsState={{
