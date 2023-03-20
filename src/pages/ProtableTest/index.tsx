@@ -1,186 +1,304 @@
-import React, { useRef, useMemo } from 'react';
-
-import { EllipsisOutlined, PlusOutlined } from '@ant-design/icons';
-import type {
-  ActionType,
-  ProColumns,
-  ProFormInstance,
+import type { ProColumns } from '@ant-design/pro-components';
+import {
+  EditableProTable,
+  ProCard,
+  ProFormField,
+  ProForm,
 } from '@ant-design/pro-components';
-import { ProTable, TableDropdown } from '@ant-design/pro-components';
-import { Button, Dropdown, Menu, Space, Tag } from 'antd';
-import request from 'umi-request';
-import { VList } from 'virtuallist-antd';
+import { Button } from 'antd';
+import React, { useState, useRef, useEffect } from 'react';
 
-type GithubIssueItem = {
-  url: string;
-  id: number;
-  number: number;
-  title: string;
-  labels: {
-    name: string;
-    color: string;
-  }[];
-  state: string;
-  comments: number;
-  created_at: string;
-  updated_at: string;
-  closed_at?: string;
+type DataSourceType = {
+  id: React.Key;
+  title?: string;
+  decs?: string;
+  state?: string;
+  created_at?: string;
+  children?: DataSourceType[];
 };
 
-const columns: ProColumns<GithubIssueItem>[] = [
-  {
-    title: 'id',
-    dataIndex: 'id',
-    valueType: 'indexBorder',
-    width: 48,
-  },
-  {
-    title: '时间',
-    dataIndex: 'time',
-    valueType: 'date',
-  },
-  {
-    title: '标题',
-    dataIndex: 'title',
-    copyable: true,
-    ellipsis: true,
-    tip: '标题过长会自动收缩',
-    formItemProps: {
-      rules: [
-        {
-          required: true,
-          message: '此项为必填项',
-        },
-      ],
-    },
-  },
-  {
-    title: '操作',
-    valueType: 'option',
-    key: 'option',
-    render: (text, record, _, action) => [
-      <a
-        key="editable"
-        onClick={() => {
-          action?.startEditable?.(record.id);
-        }}
-      >
-        编辑
-      </a>,
-      <a href={record.url} target="_blank" rel="noopener noreferrer" key="view">
-        查看
-      </a>,
-      <TableDropdown
-        key="actionGroup"
-        onSelect={() => action?.reload()}
-        menus={[
-          { key: 'copy', name: '复制' },
-          { key: 'delete', name: '删除' },
-        ]}
-      />,
-    ],
-  },
-];
-
-const menu = (
-  <Menu>
-    <Menu.Item key="1">1st it8em</Menu.Item>
-    <Menu.Item key="2">2nd item</Menu.Item>
-    <Menu.Item key="3">3rd item</Menu.Item>
-  </Menu>
-);
-
-const dataSource = Array.from({ length: 1000 }).map((_, index) => ({
-  id: index,
-}));
+const defaultData: DataSourceType[] = new Array(5).fill(1).map((_, index) => {
+  return {
+    id: (Date.now() + index).toString(),
+    title: `活动名称${index}`,
+    decs: '这个活动真好玩',
+    state: 'closed',
+    created_at: '1590486176000',
+  };
+});
 
 export default () => {
-  const actionRef = useRef<ActionType>();
-  const formRef = useRef<ProFormInstance>();
-  const vc1 = useMemo(() => {
-    return VList({
-      height: '55vh',
-      vid: 'first',
-      resetTopWhenDataChange: false, // 当数据改变时是否回滚顶部
-    });
+  const [editableKeys, setEditableRowKeys] = useState<React.Key[]>(() =>
+    defaultData.map((item) => item.id),
+  );
+  const formRef = useRef<any>();
+  const [dataSource, setDataSource] = useState<DataSourceType[]>(
+    () => defaultData,
+  );
+
+  const columns: ProColumns<DataSourceType>[] = [
+    {
+      title: (
+        <div>
+          活动名称 <span>活动二</span>
+        </div>
+      ),
+      dataIndex: 'title',
+      width: '30%',
+      formItemProps: {
+        rules: [
+          {
+            required: true,
+            whitespace: true,
+            message: '此项是必填项',
+          },
+          {
+            message: '必须包含数字',
+            pattern: /[0-9]/,
+          },
+          {
+            max: 16,
+            whitespace: true,
+            message: '最长为 16 位',
+          },
+          {
+            min: 6,
+            whitespace: true,
+            message: '最小为 6 位',
+          },
+        ],
+      },
+    },
+    {
+      title: '状态',
+      key: 'state',
+      dataIndex: 'state',
+      valueType: 'select',
+      valueEnum: {
+        all: { text: '全部', status: 'Default' },
+        open: {
+          text: '未解决',
+          status: 'Error',
+        },
+        closed: {
+          text: '已解决',
+          status: 'Success',
+        },
+      },
+    },
+    {
+      title: '描述',
+      dataIndex: 'decs',
+      formItemProps: {
+        rules: [
+          {
+            required: true,
+            whitespace: true,
+            message: '此项是必填项',
+          },
+          {
+            message: '必须包含数字',
+            pattern: /[0-9]/,
+          },
+          {
+            max: 16,
+            whitespace: true,
+            message: '最长为 16 位',
+          },
+          {
+            min: 6,
+            whitespace: true,
+            message: '最小为 6 位',
+          },
+        ],
+      },
+    },
+    {
+      title: '操作',
+      valueType: 'option',
+      width: 250,
+    },
+  ];
+  columns.forEach((item) => {
+    item.fieldProps = (form, config) => {
+      return {
+        onBlur: () => {
+          console.log('onBlur');
+        },
+        onFocus: () => {
+          console.log('onFocus');
+        },
+        onKeyUp: (e) => {
+          // 粘贴
+          if (e.keyCode === 91) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        },
+        onPaste: (e) => {
+          let { rowIndex, dataIndex } = config;
+
+          const paste = e.clipboardData
+            .getData('text')
+            .split('\r\n')
+            .reduce((prev, curr) => [...prev, curr.split('\t')], [])
+            .filter((v) => !!v);
+
+          const changeColumes = columns
+            ?.reduce((prev, curr) => [...prev, curr.dataIndex], [])
+            .filter((v) => !!v);
+
+          while (changeColumes[0] !== dataIndex) {
+            changeColumes.shift();
+          }
+          const newDataSource = [...dataSource];
+          paste.forEach((p, index1) => {
+            p.forEach((v, index2) => {
+              if (newDataSource?.[rowIndex + index1]) {
+                newDataSource[rowIndex + index1][changeColumes[index2]] = v;
+              }
+            });
+          });
+          setTimeout(() => {
+            setDataSource([...newDataSource]);
+            formRef.current?.setFieldsValue({
+              table: newDataSource,
+            });
+          }, 0);
+          e.preventDefault();
+          e.stopPropagation();
+        },
+      };
+    };
+  });
+
+  useEffect(() => {
+    console.log(666);
+    formRef.current?.setFields([
+      {
+        name: 'table',
+        value: dataSource,
+      },
+      {
+        name: ['table', '0', 'title'],
+        value: '1234',
+        errors: ['test-test-test-test11'],
+      },
+    ]);
   }, []);
+  // console.log(formRef.current?.getFieldsError(),'666');
+
+  console.log(dataSource, 'dataSource');
+
   return (
     <>
-      <ProTable<GithubIssueItem>
-        columns={columns}
-        actionRef={actionRef}
-        cardBordered
-        components={vc1}
-        scroll={{ y: '55vh', x: '100%' }}
-        request={async (params = {}, sort, filter) => {
-          console.log({
-            sort,
-            filter,
-            formRef: formRef?.current?.getFieldsValue(),
-          });
-          return Promise.resolve({
-            data: dataSource,
-            page: 1,
-            success: true,
-            total: dataSource.length,
-          });
-          //   return request<{
-          //     data: GithubIssueItem[];
-          //   }>('https://proapi.azurewebsites.net/github/issues', {
-          //     params,
-          //   });
+      <Button
+        onClick={() => {
+          formRef.current?.setFields([
+            {
+              name: 'table',
+              value: dataSource,
+            },
+            {
+              name: ['table', '0', 'title'],
+              value: '1234',
+              errors: ['test-test-test-test11'],
+            },
+          ]);
         }}
-        editable={{
-          type: 'multiple',
+      >
+        手动错误
+      </Button>
+      <Button
+        onClick={() => {
+          console.log(formRef?.current?.getFieldsError());
         }}
-        columnsState={{
-          persistenceKey: 'pro-table-singe-demos',
-          persistenceType: 'localStorage',
-          onChange(value) {
-            console.log('value: ', value);
-          },
-        }}
-        rowSelection={{
-          type: 'checkbox',
-          onChange: (selects) => {
-            console.log({ selects });
-          },
-        }}
-        rowKey="id"
-        search={{
-          labelWidth: 'auto',
-        }}
+      >
+        获取错误
+      </Button>
+      <ProForm<{
+        table: DataSourceType[];
+      }>
         formRef={formRef}
-        form={{
-          // 由于配置了 transform，提交的参与与定义的不同这里需要转化一下
-          syncToUrl: (values, type) => {
-            if (type === 'get') {
-              return {
-                ...values,
-                created_at: [values.startTime, values.endTime],
-              };
-            }
-            return values;
-          },
-        }}
-        // pagination={{
-        //   pageSize: 5,
-        //   onChange: (page) => console.log(page),
+        // initialValues={{
+        //   table: dataSource,
         // }}
-        pagination={false}
-        dateFormatter="string"
-        headerTitle="高级表格1"
-        toolBarRender={() => [
-          <Button key="button" icon={<PlusOutlined />} type="primary">
-            新建
-          </Button>,
-          <Dropdown key="menu" overlay={menu}>
-            <Button>
-              <EllipsisOutlined />
-            </Button>
-          </Dropdown>,
-        ]}
-      />
+        // validateTrigger="onBlur"
+        validateTrigger="onChange"
+      >
+        <EditableProTable<DataSourceType>
+          bordered
+          headerTitle="可编辑表格"
+          columns={columns}
+          name="table"
+          rowKey="id"
+          scroll={{
+            x: 960,
+          }}
+          value={dataSource}
+          onChange={setDataSource}
+          recordCreatorProps={{
+            newRecordType: 'dataSource',
+            record: () => ({
+              id: Date.now(),
+            }),
+          }}
+          toolBarRender={() => {
+            return [
+              <Button
+                type="primary"
+                key="save"
+                onClick={() => {
+                  // dataSource 就是当前数据，可以调用 api 将其保存
+                  dataSource[0].title = '123';
+                  setDataSource([...dataSource]);
+                }}
+              >
+                保存数据
+              </Button>,
+            ];
+          }}
+          editable={{
+            type: 'multiple',
+            editableKeys,
+            actionRender: (row, config, defaultDoms) => {
+              return [
+                <a
+                  key="delete"
+                  onClick={() => {
+                    const tableDataSource = formRef.current?.getFieldValue(
+                      'table',
+                    ) as DataSourceType[];
+                    const filterTable = tableDataSource.filter(
+                      (item) => item.id !== row?.id,
+                    );
+
+                    console.log({ filterTable, tableDataSource });
+                    console.log({ row, config, defaultDoms });
+
+                    formRef.current?.setFieldsValue({
+                      table: filterTable,
+                    });
+
+                    // formRef.current?.setFields([
+                    //   {
+                    //     name: 'table',
+                    //     value: filterTable,
+                    //   },
+                    // ]);
+                  }}
+                >
+                  删除1
+                </a>,
+              ];
+            },
+            onValuesChange: (record, recordList) => {
+              // setDataSource(recordList);
+            },
+            onChange: setEditableRowKeys,
+          }}
+        />
+      </ProForm>
     </>
   );
 };
