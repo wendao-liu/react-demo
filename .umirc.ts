@@ -8,6 +8,7 @@ export default defineConfig({
     { path: '/', component: '@/pages/index' },
     { path: '/xunjian', component: '@/pages/xunjian/index' },
     { path: '/echarts', component: '@/pages/echarts/index' },
+    { path: '/react', component: '@/pages/react/index' },
   ],
   fastRefresh: {},
 });

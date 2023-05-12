@@ -8,7 +8,7 @@ const beijingPoint = {
   name: 'Beijing',
   value: '123',
   // 经纬度
-  coord: [116.46, 39.92],
+  coord: [121.254, 31.127],
   symbol:
     'image://https://qa600jit-public.oss-cn-hangzhou.aliyuncs.com/upload_public/sites/3/orgs/1000000033/20230427095823/c5b30f48-3b95-467a-a44a-36b269ff15da/%E7%8E%AF%E4%B8%96%E5%85%AC%E5%8F%B8%E6%A0%87%E7%AD%BE.png',
   symbolSize: [128, 42],
@@ -22,7 +22,7 @@ const japanPoint = {
   name: '日本',
   value: '444',
   // 经纬度
-  coord: [138, 35],
+  coord: [104.902, 15.648],
   symbol:
     'image://https://qa600jit-public.oss-cn-hangzhou.aliyuncs.com/upload_public/sites/3/orgs/1000000033/20230427095823/c5b30f48-3b95-467a-a44a-36b269ff15da/%E7%8E%AF%E4%B8%96%E5%85%AC%E5%8F%B8%E6%A0%87%E7%AD%BE.png',
   symbolSize: [128, 42],
@@ -36,7 +36,7 @@ const japanPoint1 = {
   name: '日本',
   value: '555',
   // 经纬度
-  coord: [139, 35.9],
+  coord: [105.458, 9.3],
   symbol:
     'image://https://qa600jit-public.oss-cn-hangzhou.aliyuncs.com/upload_public/sites/3/orgs/1000000033/20230427095823/c5b30f48-3b95-467a-a44a-36b269ff15da/%E7%8E%AF%E4%B8%96%E5%85%AC%E5%8F%B8%E6%A0%87%E7%AD%BE.png',
   symbolSize: [128, 42],
@@ -74,6 +74,15 @@ const useMap = () => {
     getZoom();
   }, []);
 
+  function copyText(text) {
+    var tempInput = document.createElement('input'); // Create a temporary input element
+    tempInput.value = text; // Set the value of the input element to the text to copy
+    document.body.appendChild(tempInput); // Add the input element to the document
+    tempInput.select(); // Select the text in the input element
+    document.execCommand('copy'); // Copy the selected text
+    document.body.removeChild(tempInput); // Remove the input element from the document
+  }
+
   const init = () => {
     var chartDom = document.getElementById('main') as HTMLDivElement;
 
@@ -87,6 +96,14 @@ const useMap = () => {
     // myChart.current.on('dataZoom', getZoom);
 
     myChart.current.hideLoading();
+
+    const countryNames = world.features.map(
+      ({ properties }) => properties.name,
+    );
+    console.log({ countryNames });
+
+    copyText(countryNames);
+
     echarts.registerMap('USA', world as any, {
       Alaska: {
         left: -131,
@@ -126,11 +143,11 @@ const useMap = () => {
       console.log({ params });
       const { event } = params;
       const { offsetX, offsetY } = event;
-
       const coord = myChart.current.convertFromPixel({ seriesIndex: 0 }, [
         offsetX,
         offsetY,
       ]);
+      console.log('coord', coord);
       myChart.current.setOption({
         series: [
           {
@@ -167,17 +184,15 @@ const useMap = () => {
         ],
       });
 
-      const { dataIndex, seriesIndex, componentType } = params || {};
-      if (componentType === 'markPoint') {
-        // 点击markPoint置顶
-        var option = myChart.current.getOption();
-        var series = option.series[seriesIndex];
-        var currentMark = series.markPoint.data.splice(dataIndex, 1);
-        series.markPoint.data.push(currentMark[0]);
-        console.log(series.markPoint.data, currentMark[0], dataIndex);
-
-        myChart.current.setOption(option);
-      }
+      // const { dataIndex, seriesIndex, componentType } = params || {};
+      // if (componentType === 'markPoint') {
+      //   // 点击markPoint置顶
+      //   var option = myChart.current.getOption();
+      //   var series = option.series[seriesIndex];
+      //   var currentMark = series.markPoint.data.splice(dataIndex, 1);
+      //   series.markPoint.data.push(currentMark[0]);
+      //   myChart.current.setOption(option);
+      // }
     });
 
     // 双击事件
@@ -202,7 +217,12 @@ const useMap = () => {
               },
               // // 图形是否不响应和触发鼠标事件，默认为 false，即响应和触发鼠标事件。
               // silent: true,
-              data: [japanPoint1, zoom > 5 ? beijingPoint : japanPoint],
+              data: [
+                japanPoint1,
+                // zoom > 5 ? beijingPoint : japanPoint,
+                beijingPoint,
+                japanPoint,
+              ],
               label: {
                 position: 'right',
                 show: true,
@@ -242,7 +262,7 @@ const useMap = () => {
     const targetZoom = option?.series?.[0].zoom;
     console.log({ targetZoom });
     // 设置markPoint
-    // setMarkPoint(targetZoom);
+    setMarkPoint(targetZoom);
   };
 
   // 放大缩小
@@ -293,29 +313,45 @@ const useConfig = () => {
       // transitionDuration: 0.2
     },
     visualMap: {
-      left: 'left',
-      min: 500000,
-      max: 38000000,
-      orient: 'horizontal',
-      inRange: {
-        color: [
-          '#313695',
-          '#4575b4',
-          '#74add1',
-          '#abd9e9',
-          '#e0f3f8',
-          '#ffffbf',
-          '#fee090',
-          '#fdae61',
-          '#f46d43',
-          '#d73027',
-          '#a50026',
-        ],
-      },
-      text: ['High', 'Low'],
-      calculable: true,
-      textStyle: {
-        color: '#fff',
+      // left: 'left',
+      // min: 500000,
+      // max: 38000000,
+      // orient: 'horizontal',
+      // inRange: {
+      //   color: [
+      //     '#313695',
+      //     '#4575b4',
+      //     '#74add1',
+      //     '#abd9e9',
+      //     '#e0f3f8',
+      //     '#ffffbf',
+      //     '#fee090',
+      //     '#fdae61',
+      //     '#f46d43',
+      //     '#d73027',
+      //     '#a50026',
+      //   ],
+      // },
+      // text: ['High', 'Low'],
+      // calculable: true,
+      // textStyle: {
+      //   color: '#fff',
+      // },
+
+      type: 'piecewise',
+      pieces: [
+        { min: 1500 },
+        { min: 900, max: 1500 },
+        { min: 310, max: 1000 },
+        {
+          min: 200,
+          max: 300,
+          label: '200 - 300 (Custom Color)',
+          color: 'lightgreen',
+        },
+      ],
+      outOfRange: {
+        color: '#eee',
       },
     },
     // 工具栏关闭
@@ -355,7 +391,7 @@ const useConfig = () => {
         // 非高亮状态下的多边形和标签样式。
         itemStyle: {
           // 底图色
-          areaColor: 'green',
+          // areaColor: 'green',
           // 边框颜色
           borderColor: 'yellow',
         },
